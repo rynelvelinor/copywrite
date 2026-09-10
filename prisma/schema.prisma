@@ -1,0 +1,25 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ContentIndex {
+  id           String   @id @default(cuid())
+  subname      String   @unique
+  contentHash  String
+  ownerAddress String
+  timestamp    DateTime
+  originUrl    String
+  license      String
+  revoked      Boolean  @default(false)
+
+  @@index([contentHash])
+  @@index([ownerAddress])
+}
