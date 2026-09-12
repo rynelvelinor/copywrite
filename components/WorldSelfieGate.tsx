@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import {
   IDKitRequestWidget,
   selfieCheckLegacy,
@@ -12,6 +12,7 @@ import {
   WORLD_ACTION,
   getWorldEnvironment,
 } from "@/lib/worldid/client-config";
+import { useWorldVerification } from "@/components/WorldVerificationProvider";
 
 type SignResponse = {
   appId: `app_${string}`;
@@ -20,34 +21,15 @@ type SignResponse = {
   error?: string;
 };
 
-type StatusResponse = {
-  verified: boolean;
-};
-
 export function WorldSelfieGate() {
   const { address, isConnected } = useAccount();
+  const { verified, loading: statusLoading, refresh, markVerified } =
+    useWorldVerification();
   const [open, setOpen] = useState(false);
-  const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [appId, setAppId] = useState<`app_${string}` | null>(null);
   const [rpContext, setRpContext] = useState<RpContext | null>(null);
-
-  const refreshStatus = useCallback(async () => {
-    if (!address) {
-      setVerified(false);
-      return;
-    }
-    const res = await fetch(
-      `/api/worldid/status?address=${encodeURIComponent(address)}`,
-    );
-    const data = (await res.json()) as StatusResponse;
-    setVerified(Boolean(data.verified));
-  }, [address]);
-
-  useEffect(() => {
-    void refreshStatus();
-  }, [refreshStatus]);
 
   async function prepareAndOpen() {
     if (!address) return;
@@ -83,9 +65,30 @@ export function WorldSelfieGate() {
         idkitResponse: result,
       }),
     });
-    const data = (await res.json()) as { error?: string };
+    const data = (await res.json()) as {
+      error?: string;
+      hint?: string;
+      code?: string;
+    };
     if (!res.ok) {
-      throw new Error(data.error || "Backend verification failed");
+      const parts = [data.error || "Backend verification failed"];
+      if (data.code) parts.push(`(${data.code})`);
+      if (data.hint) parts.push(data.hint);
+      throw new Error(parts.join(" — "));
+    }
+
+    markVerified();
+    await refresh();
+
+    // Best-effort on-chain unlock; never fail the Selfie Check over this.
+    try {
+      await fetch("/api/operator/sync-verified", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address }),
+      });
+    } catch {
+      // ignore
     }
   }
 
@@ -122,7 +125,11 @@ export function WorldSelfieGate() {
               : "bg-[color-mix(in_oklab,var(--warn)_16%,white)] text-[var(--warn)]"
           }`}
         >
-          {verified ? "Verified human" : "Not verified"}
+          {statusLoading
+            ? "Checking…"
+            : verified
+              ? "Verified human"
+              : "Not verified"}
         </span>
       </div>
 
@@ -137,7 +144,13 @@ export function WorldSelfieGate() {
         </button>
       )}
 
-      {error && (
+      {verified && (
+        <p className="mt-3 text-sm text-[var(--ok)]">
+          Selfie Check complete. You can register content below.
+        </p>
+      )}
+
+      {error && !verified && (
         <p className="mt-3 text-sm text-[var(--warn)]" role="alert">
           {error}
         </p>
@@ -154,12 +167,25 @@ export function WorldSelfieGate() {
           environment={getWorldEnvironment()}
           preset={selfieCheckLegacy({ signal: address })}
           handleVerify={handleVerify}
-          onSuccess={() => {
-            setVerified(true);
-            void refreshStatus();
+          onSuccess={async () => {
+            setError(null);
+            markVerified();
+            await refresh();
+            setOpen(false);
           }}
           onError={(code) => {
-            setError(`World ID error: ${code}`);
+            // Ignore host-app noise if cookie/status already says verified.
+            void refresh().then((isVerified) => {
+              if (isVerified) {
+                setError(null);
+                return;
+              }
+              setError(
+                code === "failed_by_host_app"
+                  ? "Verification reached the app but the server rejected the proof. Check the action name `register-creator` exists in production and Selfie Check is enabled, then try again."
+                  : `World ID error: ${code}`,
+              );
+            });
           }}
         />
       )}

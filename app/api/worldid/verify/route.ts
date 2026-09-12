@@ -5,9 +5,18 @@ import { getWorldAppId, getWorldRpId } from "@/lib/worldid/config";
 type VerifyBody = {
   address?: string;
   idkitResponse?: unknown;
-  /** Legacy / sandbox proofs that still target app_id verify */
   legacyProof?: Record<string, unknown>;
 };
+
+function getVerifyBaseUrl(): string {
+  // Staging proofs (Simulator) must hit the staging Developer Portal.
+  // Production World App proofs must hit production.
+  const env = process.env.NEXT_PUBLIC_WORLD_ENVIRONMENT;
+  if (env === "staging") {
+    return "https://staging-developer.worldcoin.org";
+  }
+  return "https://developer.world.org";
+}
 
 function extractNullifier(payload: unknown): string | null {
   if (!payload || typeof payload !== "object") return null;
@@ -30,6 +39,12 @@ function extractNullifier(payload: unknown): string | null {
   return null;
 }
 
+function proofEnvironment(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  const env = (payload as { environment?: unknown }).environment;
+  return typeof env === "string" ? env : null;
+}
+
 export async function POST(request: Request) {
   let body: VerifyBody;
   try {
@@ -48,19 +63,25 @@ export async function POST(request: Request) {
 
   const rpId = getWorldRpId();
   const appId = getWorldAppId();
+  const configuredEnv = process.env.NEXT_PUBLIC_WORLD_ENVIRONMENT || "production";
+  const proofEnv = proofEnvironment(body.idkitResponse);
 
+  // Prefer rp_id on v4; fall back to app_id. Legacy v2 only if explicitly provided.
   let verifyUrl: string | null = null;
   let verifyPayload: unknown = null;
 
   if (body.idkitResponse && rpId) {
-    verifyUrl = `https://developer.world.org/api/v4/verify/${rpId}`;
+    verifyUrl = `${getVerifyBaseUrl()}/api/v4/verify/${rpId}`;
     verifyPayload = body.idkitResponse;
   } else if (body.legacyProof && appId) {
-    verifyUrl = `https://developer.worldcoin.org/api/v2/verify/${appId}`;
+    const base =
+      configuredEnv === "staging"
+        ? "https://staging-developer.worldcoin.org"
+        : "https://developer.worldcoin.org";
+    verifyUrl = `${base}/api/v2/verify/${appId}`;
     verifyPayload = body.legacyProof;
   } else if (body.idkitResponse && appId) {
-    // Fallback: some portal setups still accept app_id on the v4 route
-    verifyUrl = `https://developer.world.org/api/v4/verify/${appId}`;
+    verifyUrl = `${getVerifyBaseUrl()}/api/v4/verify/${appId}`;
     verifyPayload = body.idkitResponse;
   }
 
@@ -74,6 +95,27 @@ export async function POST(request: Request) {
     );
   }
 
+  // Common footgun: production World App + staging IDKit env (or the reverse).
+  if (proofEnv && proofEnv !== configuredEnv) {
+    console.warn("[worldid/verify] environment mismatch", {
+      configuredEnv,
+      proofEnv,
+      verifyUrl,
+    });
+  }
+
+  console.info("[worldid/verify] forwarding proof", {
+    verifyUrl,
+    configuredEnv,
+    proofEnv,
+    action:
+      body.idkitResponse &&
+      typeof body.idkitResponse === "object" &&
+      "action" in body.idkitResponse
+        ? (body.idkitResponse as { action?: string }).action
+        : undefined,
+  });
+
   const worldRes = await fetch(verifyUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -85,24 +127,29 @@ export async function POST(request: Request) {
     unknown
   >;
 
-  if (!worldRes.ok) {
+  if (!worldRes.ok || worldJson.success === false) {
+    console.error("[worldid/verify] World API rejected proof", {
+      status: worldRes.status,
+      body: worldJson,
+    });
+
+    const detail =
+      typeof worldJson.detail === "string"
+        ? worldJson.detail
+        : typeof worldJson.code === "string"
+          ? worldJson.code
+          : "World ID verification failed";
+
     return NextResponse.json(
       {
-        error: "World ID verification failed",
+        error: detail,
+        code: worldJson.code ?? null,
         details: worldJson,
+        hint:
+          configuredEnv === "staging"
+            ? "You are in staging mode. Use the World ID Simulator (simulator.worldcoin.org), not the production World App. Or set NEXT_PUBLIC_WORLD_ENVIRONMENT=production and create a production action in the Developer Portal."
+            : "You are in production mode. Use the real World App, ensure action `register-creator` exists in production, and that Selfie Check is enabled for your app.",
       },
-      { status: 400 },
-    );
-  }
-
-  const success =
-    worldJson.success === true ||
-    worldJson.status === "success" ||
-    worldRes.status === 200;
-
-  if (!success && worldJson.success === false) {
-    return NextResponse.json(
-      { error: "World ID verification rejected", details: worldJson },
       { status: 400 },
     );
   }

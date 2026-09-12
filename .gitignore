@@ -52,3 +52,5 @@ contracts/lib/
 app/generated/
 
 /app/generated/prisma
+
+/docs

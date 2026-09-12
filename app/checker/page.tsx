@@ -2,24 +2,50 @@
 
 import { type FormEvent, useState } from "react";
 
+type CheckResponse = {
+  contentHash?: string;
+  match?: boolean;
+  active?: boolean;
+  distance?: number;
+  claim?: {
+    subname: string;
+    ownerAddress: string;
+    timestamp: string;
+    originUrl: string;
+    license: string;
+    revoked: boolean;
+  };
+  error?: string;
+};
+
 export default function CheckerPage() {
   const [originUrl, setOriginUrl] = useState("");
-  const [fileName, setFileName] = useState<string | null>(null);
-  const [message, setMessage] = useState(
-    "Upload an image or paste a URL. Hash + index lookup arrives in Phase 4.",
-  );
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<CheckResponse | null>(null);
 
-  function onSubmit(event: FormEvent) {
+  async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!originUrl && !fileName) {
-      setMessage("Add an image file or origin URL to check.");
-      return;
+    setLoading(true);
+    setResult(null);
+    try {
+      const form = new FormData();
+      if (file) form.append("file", file);
+      if (originUrl) form.append("url", originUrl);
+      if (!file && !originUrl) {
+        setResult({ error: "Add an image file or origin URL." });
+        return;
+      }
+      const res = await fetch("/api/check", { method: "POST", body: form });
+      const data = (await res.json()) as CheckResponse;
+      setResult(data);
+    } catch (err) {
+      setResult({
+        error: err instanceof Error ? err.message : "Check failed",
+      });
+    } finally {
+      setLoading(false);
     }
-    setMessage(
-      `Checker stub ready${fileName ? ` for “${fileName}”` : ""}${
-        originUrl ? ` / ${originUrl}` : ""
-      }. Backend detection API is not wired yet.`,
-    );
   }
 
   return (
@@ -29,8 +55,8 @@ export default function CheckerPage() {
           Authenticity checker
         </h1>
         <p className="max-w-2xl text-[var(--muted)]">
-          Anyone can check whether content is already claimed. Results will show
-          the owner&apos;s ENS name and registration timestamp.
+          Paste an image or URL. We compute a perceptual hash and look for a
+          near-match in the ContentProof index.
         </p>
       </header>
 
@@ -44,10 +70,7 @@ export default function CheckerPage() {
             type="file"
             accept="image/*"
             className="block w-full text-sm text-[var(--muted)] file:mr-3 file:rounded-md file:border-0 file:bg-[var(--accent-soft)] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-[var(--accent)]"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              setFileName(file?.name ?? null);
-            }}
+            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
           />
         </label>
 
@@ -64,15 +87,60 @@ export default function CheckerPage() {
 
         <button
           type="submit"
-          className="inline-flex h-11 items-center justify-center rounded-md bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--surface)] transition hover:brightness-110"
+          disabled={loading}
+          className="inline-flex h-11 items-center justify-center rounded-md bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--surface)] transition hover:brightness-110 disabled:opacity-60"
         >
-          Check claim
+          {loading ? "Checking…" : "Check claim"}
         </button>
       </form>
 
-      <p className="text-sm text-[var(--muted)]" role="status">
-        {message}
-      </p>
+      {result && (
+        <div
+          className="max-w-xl rounded-lg border border-[var(--line)] bg-[var(--surface)] p-5 text-sm"
+          role="status"
+        >
+          {result.error && <p className="text-[var(--warn)]">{result.error}</p>}
+          {!result.error && result.match === false && (
+            <p>
+              No active claim found for hash{" "}
+              <code className="font-mono text-xs">{result.contentHash}</code>.
+            </p>
+          )}
+          {!result.error && result.match && result.claim && (
+            <div className="space-y-2">
+              <p className="font-semibold text-[var(--ink)]">
+                {result.claim.revoked ? "Revoked claim match" : "Claimed content"}
+              </p>
+              <p>
+                <span className="text-[var(--muted)]">Subname:</span>{" "}
+                {result.claim.subname}
+              </p>
+              <p>
+                <span className="text-[var(--muted)]">Owner:</span>{" "}
+                {result.claim.ownerAddress}
+              </p>
+              <p>
+                <span className="text-[var(--muted)]">Registered:</span>{" "}
+                {result.claim.timestamp}
+              </p>
+              <p>
+                <span className="text-[var(--muted)]">Origin:</span>{" "}
+                {result.claim.originUrl}
+              </p>
+              <p>
+                <span className="text-[var(--muted)]">License:</span>{" "}
+                {result.claim.license}
+              </p>
+              {typeof result.distance === "number" && (
+                <p>
+                  <span className="text-[var(--muted)]">Hamming distance:</span>{" "}
+                  {result.distance}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
