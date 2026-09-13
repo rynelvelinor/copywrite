@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     claims: claims.map((c) => ({
       ...c,
       timestamp: c.timestamp.toISOString(),
-      ensName: `${c.subname.split(".")[1] ?? "creator"}.contentproof.eth`,
+      ensName: `${c.subname.split(".")[1] ?? "creator"}.copywrite.eth`,
     })),
   });
 }

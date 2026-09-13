@@ -1,7 +1,7 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { RainbowKitProvider, lightTheme } from "@rainbow-me/rainbowkit";
+import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
 import { WagmiProvider } from "wagmi";
 import { useState, type ReactNode } from "react";
 import { wagmiConfig } from "@/lib/wagmi";
@@ -15,11 +15,12 @@ export function Providers({ children }: { children: ReactNode }) {
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider
-          theme={lightTheme({
-            accentColor: "#0f6b5c",
-            accentColorForeground: "#f4f7f5",
+          theme={darkTheme({
+            accentColor: "#3ecfbe",
+            accentColorForeground: "#050706",
             borderRadius: "medium",
             fontStack: "system",
+            overlayBlur: "small",
           })}
           modalSize="compact"
         >

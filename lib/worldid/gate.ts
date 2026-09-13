@@ -13,7 +13,7 @@ function getSecret() {
   return (
     process.env.WORLD_APP_SECRET ||
     process.env.WORLD_RP_SIGNING_KEY ||
-    "contentproof-dev-only-secret"
+    "copywrite-dev-only-secret"
   );
 }
 

@@ -1,4 +1,4 @@
-# ContentProof
+# Copywrite
 
 **A creator authenticity registry — provable, revocable claims to your content, backed by a real, verified human.**
 
@@ -22,15 +22,15 @@ registry is only as trustworthy as the identity behind each claim.
 
 ## The solution
 
-ContentProof gives creators a **portable, revocable, on-chain claim** to
+Copywrite gives creators a **portable, revocable, on-chain claim** to
 their content, gated by proof that a real, unique human is behind it:
 
 1. A creator verifies as a real, unique human via **World ID Selfie Check**.
-2. They receive a personal **ENSv2 subname** (`alice.contentproof.eth`)
+2. They receive a personal **ENSv2 subname** (`alice.copywrite.eth`)
    under a root registry — an identity that exists independently of any
    platform.
 3. Each piece of content they register gets its own content subname
-   (`post-<hash>.alice.contentproof.eth`), with a **perceptual hash**,
+   (`post-<hash>.alice.copywrite.eth`), with a **perceptual hash**,
    timestamp, origin URL, and license stored as resolver text records.
 4. That claim is **non-transferable and revocable only by the original
    registrant**, enforced by ENSv2's Enhanced Access Control.
@@ -77,7 +77,7 @@ Creator (wallet)
 World ID / Selfie Check  --->  verifies real, unique human
    |
    v
-ENSv2 subname registration  (alice.contentproof.eth)
+ENSv2 subname registration  (alice.copywrite.eth)
    |
    v
 Permissioned Resolver record  (content hash, timestamp, license)
@@ -146,7 +146,7 @@ a point in this project's favor, not against it:
   with blockchain timestamping for tamper-proof provenance without storing
   the underlying file.
 
-ContentProof's contribution is the specific combination: a **decentralized,
+Copywrite's contribution is the specific combination: a **decentralized,
 creator-owned** registry (not a proprietary platform's database) built on
 **ENSv2's** revocable, non-transferable subname primitives, gated by
 **World ID's** human-verification layer to close the sybil-registration
@@ -157,12 +157,12 @@ gap that a pure attribution registry can't solve alone.
 ## Repo structure
 
 ```
-contentproof/
+copywrite/
 ├── README.md
 ├── FEEDBACK.md                 <- World's required developer feedback doc
 ├── contracts/
-│   ├── ContentProofRegistry.sol
-│   └── ContentProofResolver.sol
+│   ├── CopywriteRegistry.sol
+│   └── CopywriteResolver.sol
 ├── backend/
 │   ├── hashing/                <- perceptual hash service
 │   ├── detection/               <- match/no-match logic
@@ -184,7 +184,7 @@ See [IMPLEMENTATION.md](./IMPLEMENTATION.md) for what is done (Phase 0 scaffold)
 
 ```bash
 git clone <repo-url>
-cd contentproof
+cd copywrite
 npm install
 
 # Contracts (run Foundry from WSL — Ubuntu 22.04+ recommended)
@@ -219,8 +219,8 @@ CONTENTPROOF_REGISTRY_ADDRESS=      # filled in after deploying the root registr
 
 | Contract | Address |
 |---|---|
-| ContentProof Registry (`contentproof.eth`) | `TBD` |
-| ContentProof Resolver | `TBD` |
+| Copywrite Registry (`copywrite.eth`) | `TBD` |
+| Copywrite Resolver | `TBD` |
 
 ## Demo
 

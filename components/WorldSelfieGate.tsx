@@ -7,6 +7,7 @@ import {
   type IDKitResult,
   type RpContext,
 } from "@worldcoin/idkit";
+import { Fingerprint } from "lucide-react";
 import { useAccount } from "wagmi";
 import {
   WORLD_ACTION,
@@ -94,35 +95,43 @@ export function WorldSelfieGate() {
 
   if (!isConnected || !address) {
     return (
-      <div className="rounded-lg border border-[var(--line)] bg-[var(--surface)] p-5">
-        <h2 className="font-[family-name:var(--font-display)] text-xl text-[var(--ink)]">
-          Selfie Check
-        </h2>
-        <p className="mt-2 text-sm text-[var(--muted)]">
-          Connect a wallet to start World ID Selfie Check. Registration stays
-          locked until you verify as a unique human.
-        </p>
+      <div className="card p-5 sm:p-6">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--accent-dim)] text-[var(--accent)]">
+            <Fingerprint size={20} strokeWidth={1.75} />
+          </span>
+          <div>
+            <h2 className="font-display text-xl text-[var(--ink)]">Selfie Check</h2>
+            <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
+              Connect a wallet to start World ID Selfie Check. Registration stays
+              locked until you verify as a unique human.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border border-[var(--line)] bg-[var(--surface)] p-5">
+    <div className="card p-5 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="font-[family-name:var(--font-display)] text-xl text-[var(--ink)]">
-            Selfie Check
-          </h2>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-[var(--muted)]">
-            World ID gates creator registration so sybil wallets cannot race to
-            claim someone else&apos;s content.
-          </p>
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--accent-dim)] text-[var(--accent)]">
+            <Fingerprint size={20} strokeWidth={1.75} />
+          </span>
+          <div>
+            <h2 className="font-display text-xl text-[var(--ink)]">Selfie Check</h2>
+            <p className="mt-1 max-w-xl text-sm leading-relaxed text-[var(--muted)]">
+              World ID gates creator registration so sybil wallets cannot race to
+              claim someone else&apos;s content.
+            </p>
+          </div>
         </div>
         <span
-          className={`inline-flex h-8 items-center rounded-full px-3 text-xs font-semibold ${
+          className={`inline-flex h-7 shrink-0 items-center rounded-full px-2.5 text-xs font-semibold ${
             verified
-              ? "bg-[color-mix(in_oklab,var(--ok)_18%,white)] text-[var(--ok)]"
-              : "bg-[color-mix(in_oklab,var(--warn)_16%,white)] text-[var(--warn)]"
+              ? "bg-[color-mix(in_oklab,var(--ok)_16%,transparent)] text-[var(--ok)]"
+              : "bg-[color-mix(in_oklab,var(--warn)_16%,transparent)] text-[var(--warn)]"
           }`}
         >
           {statusLoading
@@ -138,20 +147,20 @@ export function WorldSelfieGate() {
           type="button"
           onClick={() => void prepareAndOpen()}
           disabled={loading}
-          className="mt-4 inline-flex h-11 items-center justify-center rounded-md bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--surface)] transition hover:brightness-110 disabled:opacity-60"
+          className="btn-primary mt-4"
         >
           {loading ? "Preparing…" : "Verify with World ID"}
         </button>
       )}
 
       {verified && (
-        <p className="mt-3 text-sm text-[var(--ok)]">
+        <p className="mt-4 text-sm text-[var(--ok)]">
           Selfie Check complete. You can register content below.
         </p>
       )}
 
       {error && !verified && (
-        <p className="mt-3 text-sm text-[var(--warn)]" role="alert">
+        <p className="mt-3 text-sm text-[var(--danger)]" role="alert">
           {error}
         </p>
       )}

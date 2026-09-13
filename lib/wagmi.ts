@@ -29,7 +29,7 @@ const connectors = connectorsForWallets(
     },
   ],
   {
-    appName: "ContentProof",
+    appName: "Copywrite",
     projectId,
   },
 );

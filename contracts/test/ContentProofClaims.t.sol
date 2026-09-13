@@ -30,7 +30,7 @@ contract ContentProofClaimsTest is Test {
         assertEq(c.owner, alice);
         assertEq(c.creatorLabel, "alice");
         assertFalse(c.revoked);
-        assertEq(claims.ensNameOf(alice), "alice.contentproof.eth");
+        assertEq(claims.ensNameOf(alice), "alice.copywrite.eth");
     }
 
     function test_RejectUnverifiedCreator() public {

@@ -3,13 +3,13 @@ pragma solidity ^0.8.24;
 
 /**
  * @title ContentProofClaims
- * @notice Creator content-claim registry for the ContentProof demo.
+ * @notice Creator content-claim registry for the Copywrite demo.
  * @dev Domain logic for non-transferable, owner-revocable content claims.
  *      ENSv2 Permissioned Registry/Resolver wiring (subnames + text records)
  *      is layered via ContentProofEnsAdapter once ensdomains/contracts-v2 is linked.
  *
  * Why ENSv2 hierarchy still matters here:
- * - Creator identity = subname under contentproof.eth
+ * - Creator identity = subname under copywrite.eth
  * - Each claim = content subname / label under the creator
  * - Enhanced Access Control = no transfer of claims; revoke only by registrant
  */
@@ -131,7 +131,7 @@ contract ContentProofClaims {
     function ensNameOf(address owner) external view returns (string memory) {
         string memory label = creatorLabelOf[owner];
         if (bytes(label).length == 0) return "";
-        return string.concat(label, ".contentproof.eth");
+        return string.concat(label, ".copywrite.eth");
     }
 
     function contentSubname(bytes32 contentHash) external view returns (string memory) {
@@ -142,7 +142,7 @@ contract ContentProofClaims {
             _toHex(contentHash),
             ".",
             claim.creatorLabel,
-            ".contentproof.eth"
+            ".copywrite.eth"
         );
     }
 

@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     }
 
     const short = contentHash.slice(0, 16);
-    const subname = `post-${short}.${creatorLabel}.contentproof.eth`;
+    const subname = `post-${short}.${creatorLabel}.copywrite.eth`;
 
     const row = await prisma.contentIndex.upsert({
       where: { subname },
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
       claim: {
         ...row,
         timestamp: row.timestamp.toISOString(),
-        ensName: `${creatorLabel}.contentproof.eth`,
+        ensName: `${creatorLabel}.copywrite.eth`,
         txHash: body.txHash ?? null,
       },
     });

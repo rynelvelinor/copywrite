@@ -1,6 +1,9 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
+import { Ban, CircleCheck, CircleDashed, ScanSearch } from "lucide-react";
+import { FileDropzone } from "@/components/FileDropzone";
+import { PageHeader } from "@/components/PageHeader";
 
 type CheckResponse = {
   contentHash?: string;
@@ -49,98 +52,156 @@ export default function CheckerPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <header className="space-y-2">
-        <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-tight text-[var(--ink)]">
-          Authenticity checker
-        </h1>
-        <p className="max-w-2xl text-[var(--muted)]">
-          Paste an image or URL. We compute a perceptual hash and look for a
-          near-match in the ContentProof index.
-        </p>
-      </header>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6 sm:py-12">
+      <PageHeader
+        kicker="Public"
+        title="Authenticity checker"
+        description="Paste an image or URL. We compute a perceptual hash and look for a near-match in the Copywrite index."
+      />
 
-      <form
-        onSubmit={onSubmit}
-        className="max-w-xl space-y-4 rounded-lg border border-[var(--line)] bg-[var(--surface)] p-5"
-      >
-        <label className="block space-y-2 text-sm">
-          <span className="font-semibold text-[var(--ink)]">Image file</span>
-          <input
-            type="file"
-            accept="image/*"
-            className="block w-full text-sm text-[var(--muted)] file:mr-3 file:rounded-md file:border-0 file:bg-[var(--accent-soft)] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-[var(--accent)]"
-            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-          />
-        </label>
+      <div className="grid gap-6 lg:grid-cols-12">
+        <form onSubmit={onSubmit} className="card space-y-4 p-5 sm:p-6 lg:col-span-5">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--accent-dim)] text-[var(--accent)]">
+              <ScanSearch size={20} strokeWidth={1.75} />
+            </span>
+            <div>
+              <h2 className="font-display text-xl text-[var(--ink)]">Check media</h2>
+              <p className="mt-1 text-sm text-[var(--muted)]">
+                File or origin URL is enough. Both together is fine.
+              </p>
+            </div>
+          </div>
 
-        <label className="block space-y-2 text-sm">
-          <span className="font-semibold text-[var(--ink)]">Origin URL</span>
-          <input
-            type="url"
-            value={originUrl}
-            onChange={(event) => setOriginUrl(event.target.value)}
-            placeholder="https://…"
-            className="h-11 w-full rounded-md border border-[var(--line)] bg-white px-3 text-[var(--ink)] outline-none ring-[var(--accent)] focus:ring-2"
-          />
-        </label>
+          <FileDropzone file={file} onFileChange={setFile} />
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="inline-flex h-11 items-center justify-center rounded-md bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--surface)] transition hover:brightness-110 disabled:opacity-60"
-        >
-          {loading ? "Checking…" : "Check claim"}
-        </button>
-      </form>
+          <label className="block space-y-1.5 text-sm">
+            <span className="font-semibold text-[var(--ink)]">Origin URL</span>
+            <input
+              type="url"
+              value={originUrl}
+              onChange={(event) => setOriginUrl(event.target.value)}
+              placeholder="https://…"
+              className="field"
+            />
+          </label>
 
-      {result && (
-        <div
-          className="max-w-xl rounded-lg border border-[var(--line)] bg-[var(--surface)] p-5 text-sm"
-          role="status"
-        >
-          {result.error && <p className="text-[var(--warn)]">{result.error}</p>}
-          {!result.error && result.match === false && (
-            <p>
-              No active claim found for hash{" "}
-              <code className="font-mono text-xs">{result.contentHash}</code>.
-            </p>
-          )}
-          {!result.error && result.match && result.claim && (
-            <div className="space-y-2">
-              <p className="font-semibold text-[var(--ink)]">
-                {result.claim.revoked ? "Revoked claim match" : "Claimed content"}
+          <button type="submit" disabled={loading} className="btn-primary w-full">
+            {loading ? "Checking…" : "Check claim"}
+          </button>
+        </form>
+
+        <div className="lg:col-span-7">
+          {result ? (
+            <CheckerVerdict result={result} />
+          ) : (
+            <div className="card flex h-full min-h-64 flex-col items-center justify-center gap-3 p-8 text-center">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface-2)] text-[var(--muted)]">
+                <CircleDashed size={22} strokeWidth={1.75} />
+              </span>
+              <p className="text-sm text-[var(--muted)]">
+                Results appear here after you check a file or URL.
               </p>
-              <p>
-                <span className="text-[var(--muted)]">Subname:</span>{" "}
-                {result.claim.subname}
-              </p>
-              <p>
-                <span className="text-[var(--muted)]">Owner:</span>{" "}
-                {result.claim.ownerAddress}
-              </p>
-              <p>
-                <span className="text-[var(--muted)]">Registered:</span>{" "}
-                {result.claim.timestamp}
-              </p>
-              <p>
-                <span className="text-[var(--muted)]">Origin:</span>{" "}
-                {result.claim.originUrl}
-              </p>
-              <p>
-                <span className="text-[var(--muted)]">License:</span>{" "}
-                {result.claim.license}
-              </p>
-              {typeof result.distance === "number" && (
-                <p>
-                  <span className="text-[var(--muted)]">Hamming distance:</span>{" "}
-                  {result.distance}
-                </p>
-              )}
             </div>
           )}
         </div>
-      )}
+      </div>
+    </div>
+  );
+}
+
+function CheckerVerdict({ result }: { result: CheckResponse }) {
+  if (result.error) {
+    return (
+      <div className="card p-6" role="status">
+        <p className="text-sm font-semibold text-[var(--danger)]">{result.error}</p>
+      </div>
+    );
+  }
+
+  if (result.match === false) {
+    return (
+      <div className="card p-6" role="status">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-2)] text-[var(--muted)]">
+            <CircleDashed size={20} strokeWidth={1.75} />
+          </span>
+          <div>
+            <p className="font-display text-xl text-[var(--ink)]">No active claim</p>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              Nothing in the index matches this fingerprint.
+            </p>
+            {result.contentHash && (
+              <p className="mt-3 font-mono text-xs text-[var(--faint)]">
+                {result.contentHash}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (result.match && result.claim) {
+    const revoked = result.claim.revoked;
+    return (
+      <div className="card p-6" role="status">
+        <div className="flex items-start gap-3">
+          <span
+            className={`flex h-10 w-10 items-center justify-center rounded-full ${
+              revoked
+                ? "bg-[color-mix(in_oklab,var(--warn)_16%,transparent)] text-[var(--warn)]"
+                : "bg-[color-mix(in_oklab,var(--ok)_16%,transparent)] text-[var(--ok)]"
+            }`}
+          >
+            {revoked ? (
+              <Ban size={20} strokeWidth={1.75} />
+            ) : (
+              <CircleCheck size={20} strokeWidth={1.75} />
+            )}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-xl text-[var(--ink)]">
+              {revoked ? "Revoked claim" : "Claimed content"}
+            </p>
+            <p className="mt-1 font-mono text-sm text-[var(--accent)]">
+              {result.claim.subname}
+            </p>
+            <dl className="mt-5 grid gap-3 text-sm">
+              <VerdictRow label="Owner" value={result.claim.ownerAddress} mono />
+              <VerdictRow label="Registered" value={result.claim.timestamp} />
+              <VerdictRow label="Origin" value={result.claim.originUrl} />
+              <VerdictRow label="License" value={result.claim.license} />
+              {typeof result.distance === "number" && (
+                <VerdictRow label="Hamming distance" value={String(result.distance)} />
+              )}
+            </dl>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+function VerdictRow({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-0.5 border-t border-[var(--line)] pt-3 sm:flex-row sm:justify-between sm:gap-4">
+      <dt className="shrink-0 text-[var(--faint)]">{label}</dt>
+      <dd
+        className={`break-all text-[var(--ink)] ${mono ? "font-mono text-xs" : ""}`}
+      >
+        {value}
+      </dd>
     </div>
   );
 }
