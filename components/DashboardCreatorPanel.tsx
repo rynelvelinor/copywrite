@@ -46,14 +46,22 @@ export function DashboardCreatorPanel({ gate }: { gate: ReactNode }) {
       const claimsRes = await fetch(
         `/api/claims?address=${encodeURIComponent(address)}`,
       );
-      const claimsData = (await claimsRes.json()) as {
-        claims?: ClaimRow[];
-        error?: string;
-      };
+      const raw = await claimsRes.text();
+      let claimsData: { claims?: ClaimRow[]; error?: string } = {};
+      try {
+        claimsData = raw ? (JSON.parse(raw) as { claims?: ClaimRow[]; error?: string }) : {};
+      } catch {
+        setError(claimsRes.ok ? "Invalid claims response" : `Claims request failed (${claimsRes.status})`);
+        setClaims([]);
+        return;
+      }
       setClaims(claimsData.claims ?? []);
       if (claimsData.error) {
         setError(claimsData.error);
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load claims");
+      setClaims([]);
     } finally {
       setLoading(false);
     }

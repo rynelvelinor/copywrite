@@ -15,7 +15,7 @@ export function AppHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="glass-header sticky top-0 z-40 border-b border-[var(--line)]">
+    <header className="glass-header sticky top-0 z-40 border-b backdrop-blur-2xl border-[var(--line)]">
       <div className="mx-auto flex h-[72px] w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <div className="flex min-w-0 items-center gap-8">
           <Link href="/" className="flex items-center gap-2.5">
